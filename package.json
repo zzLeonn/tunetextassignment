@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.0.17",
+    "@phosphor-icons/react": "^2.1.7",
     "autoprefixer": "10.4.14",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "lodash": "^4.17.21",
+    "motion": "^12.4.2",
     "next": "13.3.0",
     "next-auth": "^4.22.1",
     "node-fetch": "^3.3.1",
