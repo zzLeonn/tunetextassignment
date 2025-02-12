@@ -6,12 +6,12 @@ import { shuffle } from 'lodash';
 import { PlayIcon } from '@heroicons/react/24/solid';
 
 const colors = [
-    'from-indigo-500',
-    'from-blue-500',
+    'from-emerald-500',
     'from-green-500',
-    'from-red-500',
-    'from-yellow-500',
-    'from-pink-500',
+    'from-teal-500',
+    'from-cyan-500',
+    'from-blue-500',
+    'from-indigo-500',
     'from-purple-500'
 ];
 
@@ -89,12 +89,12 @@ const Artist = ({
         <div className='flex-grow h-screen'>
             <header
                 style={{ opacity: opacity }}
-                className='text-white sticky top-0 h-20 z-10 text-4xl bg-neutral-800 p-8 flex items-center font-bold'
+                className='text-white sticky top-0 h-20 z-10 text-4xl bg-gradient-to-b from-black to-emerald-900/20 p-8 flex items-center font-bold'
             >
                 <div style={{ opacity: textOpacity }} className='flex items-center'>
                     {artistData && (
                         <img
-                            className='h-8 w-8 mr-6'
+                            className='h-8 w-8 mr-6 rounded-full'
                             src={artistData.images[0].url}
                             alt={artistData.name}
                         />
@@ -116,10 +116,10 @@ const Artist = ({
             </div>
             <div
                 onScroll={(e) => changeOpacity(e.target.scrollTop)}
-                className='relative -top-20 h-screen overflow-y-scroll bg-neutral-900'
+                className='relative -top-20 h-screen overflow-y-scroll bg-gradient-to-b from-black to-emerald-900/10'
             >
                 <section
-                    className={`flex items-end space-x-7 bg-gradient-to-b to-neutral-900 ${color} h-80 text-white p-8`}
+                    className={`flex items-end space-x-7 bg-gradient-to-b to-black ${color} h-80 text-white p-8`}
                 >
                     {artistData && (
                         <img
@@ -136,7 +136,7 @@ const Artist = ({
                     </div>
                 </section>
                 <div className='space-y-4'>
-                    <h2 className='text-xl font-bold px-8'>Top tracks</h2>
+                    <h2 className='text-xl font-bold px-8 text-white'>Top tracks</h2>
                     <div className='text-white px-8 flex flex-col space-y-1 pb-6'>
                         {topTracks.slice(0, 5).map((track, i) => (
                             <Song
