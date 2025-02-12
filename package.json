@@ -12,6 +12,7 @@
     "@heroicons/react": "^2.0.17",
     "@phosphor-icons/react": "^2.1.7",
     "autoprefixer": "10.4.14",
+    "cors-anywhere": "^0.4.4",
     "eslint": "8.38.0",
     "eslint-config-next": "13.3.0",
     "lodash": "^4.17.21",
@@ -27,5 +28,10 @@
   },
   "devDependencies": {
     "@types/node": "^22.13.1"
-  }
+  },
+  "description": "This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).",
+  "main": "middleware.js",
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
 }
