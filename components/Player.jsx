@@ -1,60 +1,16 @@
 import { PauseCircleIcon, PlayCircleIcon, SpeakerWaveIcon, MusicalNoteIcon } from '@heroicons/react/24/solid';
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useDebounce } from 'use-debounce';
+import Lyric from './Lyric';
 
-const Player = ({
-  globalIsTrackPlaying,
-  setGlobalIsTrackPlaying,
-  currentTrack // Expecting { artist: string, title: string }
-}) => {
+const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
   const { data: session, update } = useSession();
   const [volume, setVolume] = useState(50);
   const [debouncedVolume] = useDebounce(volume, 500);
   const [showLyrics, setShowLyrics] = useState(false);
-  const [lyrics, setLyrics] = useState('');
-  const [isLoadingLyrics, setIsLoadingLyrics] = useState(false);
-  const [lyricsError, setLyricsError] = useState('');
-
-  // Fetch lyrics when current track changes
-  useEffect(() => {
-    const fetchLyrics = async () => {
-      if (!currentTrack?.artist || !currentTrack?.title) {
-        setLyrics('');
-        return;
-      }
-      
-      setIsLoadingLyrics(true);
-      setLyricsError('');
-      
-      try {
-        const encodedArtist = encodeURIComponent(currentTrack.artist);
-        const encodedTitle = encodeURIComponent(currentTrack.title);
-        
-        const response = await fetch(
-          `https://api.lyrics.ovh/v1/${encodedArtist}/${encodedTitle}`
-        );
-
-        if (!response.ok) {
-          throw new Error(response.status === 404 
-            ? 'No lyrics found for this track'
-            : 'Failed to fetch lyrics');
-        }
-
-        const data = await response.json();
-        setLyrics(data.lyrics || 'No lyrics available');
-      } catch (error) {
-        console.error("Lyrics fetch error:", error);
-        setLyricsError(error.message);
-        setLyrics('');
-      } finally {
-        setIsLoadingLyrics(false);
-      }
-    };
-
-    fetchLyrics();
-  }, [currentTrack]);
+  const [currentTrack, setCurrentTrack] = useState(null);
 
   const handleSpotifyApiCall = async (url, options = {}) => {
     let response = await fetch(url, {
@@ -75,8 +31,27 @@ const Player = ({
         },
       });
     }
-
     return response;
+  };
+
+  const fetchCurrentTrack = async () => {
+    try {
+      const response = await handleSpotifyApiCall(
+        'https://api.spotify.com/v1/me/player/currently-playing'
+      );
+      
+      if (response.status === 200) {
+        const data = await response.json();
+        setCurrentTrack({
+          title: data.item.name,
+          artist: data.item.artists.map(artist => artist.name).join(', '),
+          album: data.item.album.name,
+          image: data.item.album.images[0]?.url
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching current track:', error);
+    }
   };
 
   const handlePlayPause = async () => {
@@ -90,9 +65,10 @@ const Player = ({
 
       if (response.status === 204) {
         setGlobalIsTrackPlaying(!globalIsTrackPlaying);
+        await fetchCurrentTrack();
       }
     } catch (error) {
-      console.error("Playback error:", error);
+      console.error('Playback error:', error);
     }
   };
 
@@ -108,46 +84,20 @@ const Player = ({
     setVolumeOnSpotify();
   }, [debouncedVolume, session, update]);
 
+  useEffect(() => {
+    if (session?.accessToken) {
+      const interval = setInterval(fetchCurrentTrack, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [session]);
+
   return (
     <>
-      <AnimatePresence>
-        {showLyrics && (
-          <motion.div
-            initial={{ y: '100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '100%' }}
-            transition={{ type: 'spring', damping: 20, stiffness: 100 }}
-            className="fixed inset-0 bg-gradient-to-br from-gray-900 to-gray-800 backdrop-blur-lg z-40 p-8"
-          >
-            <div className="max-w-3xl mx-auto h-full flex flex-col items-center justify-center">
-              <h2 className="text-3xl font-bold text-emerald-400 mb-4">
-                {currentTrack?.title || 'Current Track'} Lyrics
-              </h2>
-              
-              <div className="text-white text-center w-full max-h-[60vh] overflow-y-auto">
-                {isLoadingLyrics ? (
-                  <div className="flex justify-center items-center h-32">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-400"></div>
-                  </div>
-                ) : lyricsError ? (
-                  <p className="text-red-400">{lyricsError}</p>
-                ) : (
-                  <pre className="whitespace-pre-wrap font-sans text-lg leading-relaxed">
-                    {lyrics}
-                  </pre>
-                )}
-              </div>
-
-              <button
-                onClick={() => setShowLyrics(false)}
-                className="mt-8 px-6 py-3 bg-emerald-500/20 text-emerald-400 rounded-full hover:bg-emerald-500/30 transition-all"
-              >
-                Close Lyrics
-              </button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Lyric
+        currentTrack={currentTrack}
+        showLyrics={showLyrics}
+        setShowLyrics={setShowLyrics}
+      />
 
       <motion.div
         initial={{ y: 100 }}
@@ -155,19 +105,22 @@ const Player = ({
         className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-r from-gray-900/95 to-gray-800/95 backdrop-blur-lg border-t border-emerald-500/20 z-50"
       >
         <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
-          <div className="flex-1 flex items-center justify-start">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                console.log("Lyrics button clicked", currentTrack);
-                setShowLyrics(!showLyrics);
-              }}
-              className="text-emerald-400 hover:text-emerald-300 transition-colors"
-              disabled={!currentTrack}
-            >
-              <MusicalNoteIcon className="h-8 w-8" />
-            </motion.button>
+          <div className="flex-1 flex items-center gap-4 justify-start">
+            {currentTrack?.image && (
+              <img 
+                src={currentTrack.image} 
+                alt="Album cover" 
+                className="h-12 w-12 rounded-md"
+              />
+            )}
+            <div className="text-left">
+              <p className="text-emerald-400 font-medium truncate">
+                {currentTrack?.title || 'No track playing'}
+              </p>
+              <p className="text-gray-400 text-sm truncate">
+                {currentTrack?.artist}
+              </p>
+            </div>
           </div>
 
           <div className="flex-1 flex items-center justify-center">
@@ -186,6 +139,13 @@ const Player = ({
           </div>
 
           <div className="flex-1 flex items-center justify-end space-x-3">
+            <button
+              onClick={() => setShowLyrics(!showLyrics)}
+              className="text-emerald-400 hover:text-emerald-300 transition-colors"
+              disabled={!currentTrack}
+            >
+              <MusicalNoteIcon className="h-6 w-6" />
+            </button>
             <SpeakerWaveIcon className="h-6 w-6 text-emerald-400/80" />
             <div className="relative w-32">
               <input

@@ -69,6 +69,7 @@ const MainLayout = () => {
             setGlobalCurrentSongId={setGlobalCurrentSongId}
             setGlobalIsTrackPlaying={setGlobalIsTrackPlaying}
             globalIsTrackPlaying={globalIsTrackPlaying}
+            currentTrack={{ artist: "Artist Name", title: "Song Title" }}
           />
         </div>
       </main>
