@@ -2,7 +2,7 @@ import { PauseCircleIcon, PlayCircleIcon, SpeakerWaveIcon, MusicalNoteIcon } fro
 import { useSession } from 'next-auth/react';
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useDebounce } from 'use-debounce';
+import { useDebounce, useDebouncedCallback } from 'use-debounce';
 import Lyric from './Lyric';
 
 const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
@@ -34,7 +34,7 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
     return response;
   };
 
-  const fetchCurrentTrack = async () => {
+  const fetchCurrentTrack = useDebouncedCallback(async () => {
     try {
       const response = await handleSpotifyApiCall(
         'https://api.spotify.com/v1/me/player/currently-playing'
@@ -48,11 +48,20 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
           album: data.item.album.name,
           image: data.item.album.images[0]?.url
         });
+        setGlobalIsTrackPlaying(data.is_playing);
       }
     } catch (error) {
       console.error('Error fetching current track:', error);
     }
-  };
+  }, 1000);
+
+  useEffect(() => {
+    if (session?.accessToken) {
+      fetchCurrentTrack();
+      const interval = setInterval(fetchCurrentTrack, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [session, fetchCurrentTrack]);
 
   const handlePlayPause = async () => {
     if (!session?.accessToken) return;

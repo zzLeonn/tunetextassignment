@@ -30,9 +30,9 @@ const Lyric = ({ currentTrack, showLyrics, setShowLyrics }) => {
         .replace(/ *\-.*/, "")
         .trim();
 
-      const response = await fetch(
-        `https://cors-anywhere.herokuapp.com/https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`
-      );
+        const response = await fetch(
+          `http://localhost:3001/https://api.lyrics.ovh/v1/${encodeURIComponent(cleanArtist)}/${encodeURIComponent(cleanTitle)}`
+        );
 
       if (!response.ok) {
         throw response.status === 404 
