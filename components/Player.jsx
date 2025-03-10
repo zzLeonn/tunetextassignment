@@ -1,6 +1,11 @@
-import { PauseCircleIcon, PlayCircleIcon, SpeakerWaveIcon, MusicalNoteIcon } from '@heroicons/react/24/solid';
+import { 
+  PauseCircleIcon, 
+  PlayCircleIcon, 
+  SpeakerWaveIcon, 
+  MusicalNoteIcon 
+} from '@heroicons/react/24/solid';
 import { useSession } from 'next-auth/react';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useDebounce, useDebouncedCallback } from 'use-debounce';
 import Lyric from './Lyric';
@@ -12,67 +17,78 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
   const [showLyrics, setShowLyrics] = useState(false);
   const [currentTrack, setCurrentTrack] = useState(null);
 
-  const handleSpotifyApiCall = async (url, options = {}) => {
-    let response = await fetch(url, {
-      ...options,
-      headers: {
-        ...options.headers,
-        Authorization: `Bearer ${session?.accessToken}`,
-      },
-    });
-
-    if (response.status === 401) {
-      await update();
-      response = await fetch(url, {
+  // Helper function to call Spotify API with token refresh if needed.
+  const handleSpotifyApiCall = useCallback(
+    async (url, options = {}) => {
+      let response = await fetch(url, {
         ...options,
         headers: {
           ...options.headers,
           Authorization: `Bearer ${session?.accessToken}`,
         },
       });
-    }
-    return response;
-  };
 
+      if (response.status === 401) {
+        await update();
+        response = await fetch(url, {
+          ...options,
+          headers: {
+            ...options.headers,
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        });
+      }
+      return response;
+    },
+    [session, update]
+  );
+
+  // Fetches the current track from Spotify and updates state.
   const fetchCurrentTrack = useDebouncedCallback(async () => {
     try {
       const response = await handleSpotifyApiCall(
         'https://api.spotify.com/v1/me/player/currently-playing'
       );
-      
       if (response.status === 200) {
         const data = await response.json();
         setCurrentTrack({
           title: data.item.name,
-          artist: data.item.artists.map(artist => artist.name).join(', '),
+          artist: data.item.artists.map((artist) => artist.name).join(', '),
           album: data.item.album.name,
-          image: data.item.album.images[0]?.url
+          image: data.item.album.images[0]?.url,
         });
         setGlobalIsTrackPlaying(data.is_playing);
+      } else {
+        setCurrentTrack(null);
       }
     } catch (error) {
       console.error('Error fetching current track:', error);
     }
   }, 1000);
 
+  // Set up a single interval to update the current track.
   useEffect(() => {
     if (session?.accessToken) {
+      // Fetch immediately and then every 5 seconds.
       fetchCurrentTrack();
       const interval = setInterval(fetchCurrentTrack, 5000);
       return () => clearInterval(interval);
     }
   }, [session, fetchCurrentTrack]);
 
+  // Handle play/pause action
   const handlePlayPause = async () => {
     if (!session?.accessToken) return;
 
     try {
+      const endpoint = globalIsTrackPlaying ? 'pause' : 'play';
       const response = await handleSpotifyApiCall(
-        `https://api.spotify.com/v1/me/player/${globalIsTrackPlaying ? 'pause' : 'play'}`,
+        `https://api.spotify.com/v1/me/player/${endpoint}`,
         { method: 'PUT' }
       );
 
       if (response.status === 204) {
+        // Toggle play/pause and update current track.
         setGlobalIsTrackPlaying(!globalIsTrackPlaying);
         await fetchCurrentTrack();
       }
@@ -81,6 +97,7 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
     }
   };
 
+  // Update volume on Spotify whenever the debounced volume changes.
   useEffect(() => {
     const setVolumeOnSpotify = async () => {
       if (session?.accessToken) {
@@ -91,14 +108,7 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
       }
     };
     setVolumeOnSpotify();
-  }, [debouncedVolume, session, update]);
-
-  useEffect(() => {
-    if (session?.accessToken) {
-      const interval = setInterval(fetchCurrentTrack, 5000);
-      return () => clearInterval(interval);
-    }
-  }, [session]);
+  }, [debouncedVolume, session, handleSpotifyApiCall]);
 
   return (
     <>
@@ -148,13 +158,16 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
           </div>
 
           <div className="flex-1 flex items-center justify-end space-x-3">
-            <button
-              onClick={() => setShowLyrics(!showLyrics)}
-              className="text-emerald-400 hover:text-emerald-300 transition-colors"
+            {/* Redesigned Lyrics Icon */}
+            <motion.button
+              whileHover={{ scale: 1.15, rotate: 10 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowLyrics((prev) => !prev)}
+              className="flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-full shadow-xl text-white transition-all"
               disabled={!currentTrack}
             >
-              <MusicalNoteIcon className="h-6 w-6" />
-            </button>
+              <MusicalNoteIcon className="h-8 w-8" />
+            </motion.button>
             <SpeakerWaveIcon className="h-6 w-6 text-emerald-400/80" />
             <div className="relative w-32">
               <input
