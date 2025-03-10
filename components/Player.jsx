@@ -170,21 +170,26 @@ const Player = ({ globalIsTrackPlaying, setGlobalIsTrackPlaying }) => {
       <div className="w-full px-4 py-3 flex flex-col">
         {/* Progress Bar - Centered Above Controls */}
         <div className="absolute left-1/2 top-2 -translate-x-1/2 w-full max-w-[600px]">
-          <input
-            type="range"
-            min="0"
-            max={trackDuration}
-            value={trackProgress}
-            onChange={handleSeek}
-            className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer 
-              [&::-webkit-slider-runnable-track]:rounded-full
-              [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:w-4 
-              [&::-webkit-slider-thumb]:bg-gray-300 [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:shadow-lg
-              [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-gray-700
-              hover:[&::-webkit-slider-thumb]:bg-gray-200 transition-all"
-          />
-        </div>
+  <input
+    type="range"
+    min="0"
+    max={trackDuration}
+    value={trackProgress}
+    onChange={handleSeek}
+    className="w-full h-2 bg-gradient-to-r from-white to-gray-700 rounded-full appearance-none cursor-pointer 
+      [&::-webkit-slider-runnable-track]:bg-transparent
+      [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:w-5 
+      [&::-webkit-slider-thumb]:bg-emerald-400 [&::-webkit-slider-thumb]:rounded-full
+      [&::-webkit-slider-thumb]:shadow-lg
+      [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-emerald-600
+      hover:[&::-webkit-slider-thumb]:bg-emerald-300 transition-all"
+    style={{
+      background: `linear-gradient(to right, #fff ${(trackProgress / trackDuration) * 100}%, #374151 ${
+        (trackProgress / trackDuration) * 100
+      }%)`
+    }}
+  />
+</div>
 
         {/* Main Controls Row */}
         <div className="flex items-center justify-between h-16 mt-4"> {/* Added mt-4 for spacing */}
